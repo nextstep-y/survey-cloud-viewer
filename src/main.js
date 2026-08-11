@@ -168,12 +168,14 @@ async function loadLas(file){
   const material=new THREE.PointsMaterial({size:1.2,sizeAttenuation:false,color:0xffffff,vertexColors:true});
   return { object:new THREE.Points(geometry,material), type:'point', count:pos.length/3, totalCount:total||pos.length/3, skip };
 }
+async function readPlyHeader(file){const text=new TextDecoder().decode(await file.slice(0,16384).arrayBuffer()),end=text.indexOf('end_header');if(end<0)throw new Error('ไม่พบ end_header ในไฟล์ PLY');const header=text.slice(0,end),vertex=header.match(/element\s+vertex\s+(\d+)/i),face=header.match(/element\s+face\s+(\d+)/i),texture=header.match(/comment\s+TextureFile\s+(.+)/i);return {vertexCount:Number(vertex?.[1]||0),faceCount:Number(face?.[1]||0),textureName:texture?.[1]?.trim()||''}}
 async function loadPly(file){
-  const geometry=new PLYLoader().parse(await file.arrayBuffer()); geometry.computeBoundingBox();
-  const isMesh=!!geometry.index || !!geometry.attributes.normal;
+  const info=await readPlyHeader(file),geometry=new PLYLoader().parse(await file.arrayBuffer()); geometry.computeBoundingBox();
+  const isMesh=info.faceCount>0||!!geometry.index||!!geometry.attributes.normal;
   if(!isMesh){const pos=geometry.attributes.position.array,count=geometry.attributes.position.count,source=geometry.attributes.color?.array;geometry.computeBoundingBox();geometry.userData.colorSets={rgb:rgb3(source,count),elevation:elevationColors(pos,geometry.boundingBox),classification:null};if(geometry.userData.colorSets.rgb)geometry.setAttribute('color',new THREE.BufferAttribute(geometry.userData.colorSets.rgb,3,true));else geometry.setAttribute('color',new THREE.BufferAttribute(geometry.userData.colorSets.elevation,3,true))}
-  const material=isMesh?new THREE.MeshStandardMaterial({color:colorFor('mesh'),roughness:.75,metalness:.08,side:THREE.DoubleSide}):new THREE.PointsMaterial({size:1.2,sizeAttenuation:false,color:0xffffff,vertexColors:true});
-  return {object:isMesh?new THREE.Mesh(geometry,material):new THREE.Points(geometry,material),type:isMesh?'mesh':'point',count:geometry.attributes.position.count};
+  const hasColors=!!geometry.attributes.color,hasNormals=!!geometry.attributes.normal;
+  const material=isMesh?(hasNormals?new THREE.MeshStandardMaterial({color:hasColors?0xffffff:colorFor('mesh'),vertexColors:hasColors,roughness:.75,metalness:.08,side:THREE.DoubleSide}):new THREE.MeshBasicMaterial({color:hasColors?0xffffff:colorFor('mesh'),vertexColors:hasColors,side:THREE.DoubleSide})):new THREE.PointsMaterial({size:1.2,sizeAttenuation:false,color:0xffffff,vertexColors:true});
+  return {object:isMesh?new THREE.Mesh(geometry,material):new THREE.Points(geometry,material),type:isMesh?'mesh':'point',count:isMesh?(info.faceCount||geometry.attributes.position.count/3):geometry.attributes.position.count,totalCount:info.vertexCount||geometry.attributes.position.count,textureName:info.textureName};
 }
 async function loadMesh(file,ext){
   let object;
@@ -236,7 +238,7 @@ function addLayer(name,result){
   const layer={id:state.nextId++,name,type:result.type,object:result.object,count:result.count,totalCount:result.totalCount||result.count,skip:result.skip||1,elevation:0,colorMode:initialMode,sourceBox:rawBox.clone(),focusBox,focusTrimmed:!!result.focusTrimmed};
   scene.add(layer.object); state.layers.push(layer); updateLayerTransform(layer); renderLayers(); selectLayer(layer.id); $('#welcome').hidden=true;
   if(state.layers.length===1)fitLayer(layer);else analyzeCoordinateAlignment(layer,previousBox);
-  invalidate();const notes=[];if(result.repairNote)notes.push(`ซ่อมอัตโนมัติ: ${result.repairNote}`);if(result.focusTrimmed)notes.push('โฟกัสเฉพาะขอบเขตงานหลัก (พบ outlier)');toast(`นำเข้า ${name} สำเร็จ${notes.length?' · '+notes.join(' · '):''}`);
+  invalidate();const notes=[];if(result.repairNote)notes.push(`ซ่อมอัตโนมัติ: ${result.repairNote}`);if(result.focusTrimmed)notes.push('โฟกัสเฉพาะขอบเขตงานหลัก (พบ outlier)');if(result.textureName)notes.push(`แสดงพื้นผิวด้วย Vertex Color · Texture: ${result.textureName}`);toast(`นำเข้า ${name} สำเร็จ${notes.length?' · '+notes.join(' · '):''}`);
 }
 function updateLayerTransform(layer){ layer.object.position.set(-state.origin.x,-state.origin.y,-state.origin.z+(layer.type==='dxf'?layer.elevation:0));invalidate(); }
 function renderLayers(){
