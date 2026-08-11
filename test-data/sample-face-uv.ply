@@ -1,0 +1,18 @@
+ply
+format ascii 1.0
+comment TextureFile sample.png
+element vertex 3
+property float x
+property float y
+property float z
+property uchar red
+property uchar green
+property uchar blue
+element face 1
+property list uchar int vertex_indices
+property list uchar float texcoord
+end_header
+500000 1500000 10 255 30 20
+500010 1500000 10 30 255 20
+500000 1500010 10 20 30 255
+3 0 1 2 6 0 0 1 0 0 1
