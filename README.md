@@ -27,6 +27,10 @@ npm run dev
 
 เปิด <http://127.0.0.1:5173>
 
+## เว็บไซต์สาธารณะ
+
+เปิด Viewer ได้ที่ <https://nextstep-y.github.io/survey-cloud-viewer/>
+
 ## Production build
 
 ```bash
@@ -54,4 +58,3 @@ Binary DXF ต้องบันทึกใหม่เป็น ASCII DXF ก�
 - [loaders.gl](https://loaders.gl/)
 - [dxf-parser](https://github.com/gdsestimating/dxf-parser)
 - [Vite](https://vite.dev/)
-
