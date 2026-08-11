@@ -1,0 +1,14 @@
+ply
+format ascii 1.0
+element vertex 4
+property float x
+property float y
+property float z
+property uchar red
+property uchar green
+property uchar blue
+end_header
+500000 1500000 10 255 30 20
+500010 1500000 15 30 255 20
+500010 1500010 20 20 30 255
+500000 1500010 25 255 230 20

@@ -1,0 +1,25 @@
+node_modules/
+dist/
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Local survey/model data can be large or confidential.
+*.las
+*.laz
+*.e57
+*.xyz
+*.pts
+*.pcd
+*.glb
+*.gltf
+*.obj
+*.stl
+*.dxf
+*.dwg
+
+# Keep only the small, synthetic fixtures used by this project.
+!test-data/*.dxf
+!test-data/*.ply
+

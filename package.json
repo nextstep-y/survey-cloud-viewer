@@ -1,0 +1,20 @@
+{
+  "name": "survey-cloud-viewer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@loaders.gl/core": "^4.3.4",
+    "@loaders.gl/las": "^4.3.4",
+    "dxf-parser": "^1.1.2",
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "vite": "^7.1.2"
+  }
+}
