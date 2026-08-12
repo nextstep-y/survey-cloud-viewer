@@ -107,7 +107,7 @@ function resize() { const { clientWidth:w, clientHeight:h } = viewport;if(!w||!h
 new ResizeObserver(resize).observe(viewport);
 controls.addEventListener('change',invalidate);controls.addEventListener('start',invalidate);controls.addEventListener('end',invalidate);invalidate();
 function resumeViewer(){
-  if(contextLost)return;cancelAnimationFrame(rafId);renderRequested=false;controls.enabled=!state.measuring;resize();controls.update();invalidate();
+  if(contextLost)return;cancelAnimationFrame(rafId);renderRequested=false;controls.enabled=true;resize();controls.update();invalidate();
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(rafId);renderRequested=false}else resumeViewer()});
 window.addEventListener('focus',resumeViewer);window.addEventListener('pageshow',resumeViewer);
@@ -343,7 +343,7 @@ function finishMeasure(rawEnd){
   $('#deltaX').textContent=`${fmt(delta.x)} m`;$('#deltaY').textContent=`${fmt(delta.y)} m`;$('#deltaZ').textContent=`${fmt(delta.z)} m`;$('#distance2d').textContent=`${fmt(Math.hypot(delta.x,delta.y))} m`;$('#distance3d').textContent=`${fmt(delta.length())} m`;$('#measureHint').textContent=`จุดปลาย: E ${fmt(end.x+state.origin.x)} · N ${fmt(end.y+state.origin.y)} · Z ${fmt(end.z+state.origin.z)}`;
   state.measureStart=null;invalidate();
 }
-function toggleMeasure(on){if(on&&state.pivotMode){state.pivotMode=false;$('#pivotBtn').classList.remove('active');renderer.domElement.classList.remove('pivoting')}state.measuring=on;$('#measurePanel').hidden=!on;$('#measureBtn').classList.toggle('active',on);renderer.domElement.classList.toggle('measuring',on);controls.enabled=!on;if(!on)clearMeasure()}
+function toggleMeasure(on){if(on&&state.pivotMode){state.pivotMode=false;$('#pivotBtn').classList.remove('active');renderer.domElement.classList.remove('pivoting')}state.measuring=on;$('#measurePanel').hidden=!on;$('#measureBtn').classList.toggle('active',on);renderer.domElement.classList.toggle('measuring',on);controls.enabled=true;if(!on)clearMeasure()}
 $('#measureBtn').addEventListener('click',()=>toggleMeasure(!state.measuring));$('#closeMeasure').addEventListener('click',()=>toggleMeasure(false));$('#clearMeasure').addEventListener('click',clearMeasure);
 $('#pivotBtn').addEventListener('click',()=>{if(state.measuring)toggleMeasure(false);state.pivotMode=!state.pivotMode;$('#pivotBtn').classList.toggle('active',state.pivotMode);renderer.domElement.classList.toggle('pivoting',state.pivotMode);if(state.pivotMode)toast('คลิกตำแหน่งที่ต้องการใช้เป็นศูนย์กลางใหม่')});
 document.querySelectorAll('[data-axis]').forEach(b=>b.addEventListener('click',()=>{state.measureAxis=b.dataset.axis;document.querySelectorAll('[data-axis]').forEach(x=>x.classList.toggle('active',x===b));clearMeasure()}));
