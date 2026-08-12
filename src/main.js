@@ -179,11 +179,24 @@ async function loadPly(file){
 }
 async function loadMesh(file,ext){
   let object;
-  if(ext==='glb'||ext==='gltf'){ const url=URL.createObjectURL(file); try { object=(await new GLTFLoader().loadAsync(url)).scene; } finally { URL.revokeObjectURL(url); } }
+  if(ext==='glb'||ext==='gltf'){
+    const url=URL.createObjectURL(file);
+    try {
+      const gltfScene=(await new GLTFLoader().loadAsync(url)).scene;
+      // glTF is Y-up. Survey layers in this viewer use X=E, Y=N, Z=elevation,
+      // so rotate the complete scene to map (X,Y,Z) -> (X,-Z,Y).
+      object=new THREE.Group();
+      object.name=gltfScene.name||'glTF survey model';
+      object.rotation.x=Math.PI/2;
+      object.add(gltfScene);
+      object.updateMatrixWorld(true);
+      object.userData.axisConversion='glTF Y-up → Survey Z-up';
+    } finally { URL.revokeObjectURL(url); }
+  }
   else if(ext==='obj') object=new OBJLoader().parse(await file.text());
   else { const geometry=new STLLoader().parse(await file.arrayBuffer()); geometry.computeVertexNormals(); object=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color:colorFor('mesh'),roughness:.72,metalness:.06})); }
   let count=0; object.traverse(o=>{ if(o.isMesh){ count+=o.geometry.attributes.position?.count||0; o.material=o.material?.clone?.()||new THREE.MeshStandardMaterial({color:colorFor('mesh')}); } });
-  return {object,type:'mesh',count};
+  return {object,type:'mesh',count,importNote:object.userData.axisConversion||''};
 }
 function normalizeDxfText(source){
   if(source.startsWith('AutoCAD Binary DXF')) throw new Error('ไฟล์นี้เป็น Binary DXF กรุณา Save As เป็น ASCII DXF ก่อนนำเข้า');
@@ -238,7 +251,7 @@ function addLayer(name,result){
   const layer={id:state.nextId++,name,type:result.type,object:result.object,count:result.count,totalCount:result.totalCount||result.count,skip:result.skip||1,elevation:0,colorMode:initialMode,sourceBox:rawBox.clone(),focusBox,focusTrimmed:!!result.focusTrimmed};
   scene.add(layer.object); state.layers.push(layer); updateLayerTransform(layer); renderLayers(); selectLayer(layer.id); $('#welcome').hidden=true;
   if(state.layers.length===1)fitLayer(layer);else analyzeCoordinateAlignment(layer,previousBox);
-  invalidate();const notes=[];if(result.repairNote)notes.push(`ซ่อมอัตโนมัติ: ${result.repairNote}`);if(result.focusTrimmed)notes.push('โฟกัสเฉพาะขอบเขตงานหลัก (พบ outlier)');if(result.textureName)notes.push(`แสดงพื้นผิวด้วย Vertex Color · Texture: ${result.textureName}`);toast(`นำเข้า ${name} สำเร็จ${notes.length?' · '+notes.join(' · '):''}`);
+  invalidate();const notes=[];if(result.repairNote)notes.push(`ซ่อมอัตโนมัติ: ${result.repairNote}`);if(result.importNote)notes.push(`แปลงแกน: ${result.importNote}`);if(result.focusTrimmed)notes.push('โฟกัสเฉพาะขอบเขตงานหลัก (พบ outlier)');if(result.textureName)notes.push(`แสดงพื้นผิวด้วย Vertex Color · Texture: ${result.textureName}`);toast(`นำเข้า ${name} สำเร็จ${notes.length?' · '+notes.join(' · '):''}`);
 }
 function updateLayerTransform(layer){ layer.object.position.set(-state.origin.x,-state.origin.y,-state.origin.z+(layer.type==='dxf'?layer.elevation:0));invalidate(); }
 function renderLayers(){
