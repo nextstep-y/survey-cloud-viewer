@@ -6,7 +6,9 @@
 
 - เปิด Point Cloud: LAS, LAZ และ PLY
 - เปิด Mesh Model: GLB, GLTF, OBJ, STL และ PLY
+- สร้างพื้นผิวภูมิประเทศจาก GeoTIFF DEM พร้อมตรวจ EPSG/UTM
 - โหลดภาพดาวเทียม Esri World Imagery ตาม Local Origin และ UTM Zone
+- วางภาพดาวเทียมบนพื้นผิว DEM (terrain draping)
 - นำเข้า DXF พร้อมรักษาค่าพิกัดและปรับ Elevation Offset
 - แสดง Point Cloud ด้วยสี RGB, Elevation และ Classification
 - จัดการ CAD Layer และสีภายใน DXF
@@ -46,6 +48,7 @@ npm run preview
 | Point Cloud | LAS, LAZ, PLY |
 | Mesh | GLB, GLTF, OBJ, STL, PLY |
 | Drawing | ASCII DXF |
+| Terrain | GeoTIFF DEM (TIF, TIFF) |
 
 Binary DXF ต้องบันทึกใหม่เป็น ASCII DXF ก่อนนำเข้า
 

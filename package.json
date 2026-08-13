@@ -12,6 +12,7 @@
     "@loaders.gl/core": "^4.3.4",
     "@loaders.gl/las": "^4.3.4",
     "dxf-parser": "^1.1.2",
+    "geotiff": "^3.0.5",
     "three": "^0.180.0"
   },
   "devDependencies": {
