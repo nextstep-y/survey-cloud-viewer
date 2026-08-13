@@ -6,6 +6,7 @@
 
 - เปิด Point Cloud: LAS, LAZ และ PLY
 - เปิด Mesh Model: GLB, GLTF, OBJ, STL และ PLY
+- โหลดภาพดาวเทียม Esri World Imagery ตาม Local Origin และ UTM Zone
 - นำเข้า DXF พร้อมรักษาค่าพิกัดและปรับ Elevation Offset
 - แสดง Point Cloud ด้วยสี RGB, Elevation และ Classification
 - จัดการ CAD Layer และสีภายใน DXF
