@@ -11,6 +11,8 @@
 - แปลง PRS92 เป็น WGS84 อัตโนมัติสำหรับภาพดาวเทียมและ OSM โดยรักษาพิกัดสำรวจต้นฉบับ
 - โหลดภาพดาวเทียม Esri World Imagery ตาม Local Origin และระบบพิกัดที่เลือก
 - วางภาพดาวเทียมบนพื้นผิว DEM (terrain draping)
+- ปรับ DEM Vertical Offset ด้วยค่าที่กำหนดหรือ Calibrate จาก Control Point ระดับจริง
+- วางถนนและฐานอาคาร OSM ตามระดับผิว DEM ที่แก้แล้ว
 - นำเข้า DXF พร้อมรักษาค่าพิกัดและปรับ Elevation Offset
 - แสดง Point Cloud ด้วยสี RGB, Elevation และ Classification
 - จัดการ CAD Layer และสีภายใน DXF
