@@ -23,6 +23,7 @@
 - จัดการ CAD Layer และสีภายใน DXF
 - เลือก DXF Entity และดู Type, Layer และ Handle
 - วัดค่า ΔX, ΔY, ΔZ, ระยะราบ และระยะเอียง
+- วัดปริมาตรกองวัสดุด้วย Polygon, Best-fit Base Plane และ Grid Cell พร้อม Cut, Fill, Net Volume และ Coverage
 - Axis Snap แบบ Auto, X, Y, Z และ Off
 - ย้าย Orbit Center และซูมเข้าหาตำแหน่งใต้เมาส์
 - Adaptive point budget สำหรับ LAS/LAZ ขนาดใหญ่

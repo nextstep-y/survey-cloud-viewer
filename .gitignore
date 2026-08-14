@@ -22,4 +22,4 @@ dist/
 # Keep only the small, synthetic fixtures used by this project.
 !test-data/*.dxf
 !test-data/*.ply
-
+!test-data/sample-stockpile.obj
