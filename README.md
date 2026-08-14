@@ -12,7 +12,7 @@
 - โหลดภาพดาวเทียม Esri World Imagery ตาม Local Origin และระบบพิกัดที่เลือก
 - วางภาพดาวเทียมบนพื้นผิว DEM (terrain draping)
 - คง Project DEM ที่ Offset 0.000 m เป็นค่าใช้งานปกติ เพราะมาจาก Point Cloud ชุดเดียวกัน และซ่อนการ Calibrate ไว้ในเครื่องมือขั้นสูง
-- วาง Esri imagery ให้ติดตาม Project DEM อัตโนมัติ
+- วาง Esri imagery ให้ติดตาม Project DEM อัตโนมัติ พร้อมปรับ Imagery Offset แยกได้
 - ปรับระดับ Regional Terrain, อาคาร OSM และถนน OSM แยกกันได้ โดยไม่แก้ geometry ต้นฉบับ
 - โหลด Regional Terrain รัศมี 2, 5 หรือ 10 กิโลเมตรจาก Mapzen Terrain Tiles บน AWS Open Data
 - วาง Esri imagery บนภูเขารอบโครงการและ Blend เข้ากับ Project DEM
