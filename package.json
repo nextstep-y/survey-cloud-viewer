@@ -15,7 +15,8 @@
     "geotiff": "^3.0.5",
     "jspdf": "^4.2.1",
     "proj4": "^2.21.0",
-    "three": "^0.180.0"
+    "three": "^0.180.0",
+    "three-mesh-bvh": "^0.9.14"
   },
   "devDependencies": {
     "vite": "^7.1.2"

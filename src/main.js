@@ -4,12 +4,17 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
+import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree, CENTER } from 'three-mesh-bvh';
 import { load } from '@loaders.gl/core';
 import { LASLoader } from '@loaders.gl/las';
 import proj4 from 'proj4';
 import DxfParser from 'dxf-parser';
 import './style.css';
 import './measure.css';
+
+THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
 document.querySelector('#app').innerHTML = `
   <div class="shell">
@@ -252,6 +257,7 @@ async function loadPly(file){
   if(!isMesh){const pos=geometry.attributes.position.array,count=geometry.attributes.position.count,source=geometry.attributes.color?.array;geometry.computeBoundingBox();geometry.userData.colorSets={rgb:rgb3(source,count),elevation:elevationColors(pos,geometry.boundingBox),classification:null};if(geometry.userData.colorSets.rgb)geometry.setAttribute('color',new THREE.BufferAttribute(geometry.userData.colorSets.rgb,3,true));else geometry.setAttribute('color',new THREE.BufferAttribute(geometry.userData.colorSets.elevation,3,true))}
   const hasColors=!!geometry.attributes.color,hasNormals=!!geometry.attributes.normal;
   const material=isMesh?(hasNormals?new THREE.MeshStandardMaterial({color:hasColors?0xffffff:colorFor('mesh'),vertexColors:hasColors,roughness:.75,metalness:.08,side:THREE.DoubleSide}):new THREE.MeshBasicMaterial({color:hasColors?0xffffff:colorFor('mesh'),vertexColors:hasColors,side:THREE.DoubleSide})):new THREE.PointsMaterial({size:1.2,sizeAttenuation:false,color:0xffffff,vertexColors:true});
+  if(isMesh) geometry.computeBoundsTree({strategy:CENTER,maxLeafTris:24});
   return {object:isMesh?new THREE.Mesh(geometry,material):new THREE.Points(geometry,material),type:isMesh?'mesh':'point',count:isMesh?(info.faceCount||geometry.attributes.position.count/3):geometry.attributes.position.count,totalCount:info.vertexCount||geometry.attributes.position.count,textureName:info.textureName};
 }
 async function loadMesh(file,ext){
@@ -272,7 +278,7 @@ async function loadMesh(file,ext){
   }
   else if(ext==='obj') object=new OBJLoader().parse(await file.text());
   else { const geometry=new STLLoader().parse(await file.arrayBuffer()); geometry.computeVertexNormals(); object=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color:colorFor('mesh'),roughness:.72,metalness:.06})); }
-  let count=0; object.traverse(o=>{ if(o.isMesh){ count+=o.geometry.attributes.position?.count||0; o.material=o.material?.clone?.()||new THREE.MeshStandardMaterial({color:colorFor('mesh')}); } });
+  const indexedGeometries=new WeakSet();let count=0; object.traverse(o=>{ if(o.isMesh){ count+=o.geometry.attributes.position?.count||0; o.material=o.material?.clone?.()||new THREE.MeshStandardMaterial({color:colorFor('mesh')});if(o.geometry&&!indexedGeometries.has(o.geometry)){o.geometry.computeBoundsTree({strategy:CENTER,maxLeafTris:24});indexedGeometries.add(o.geometry)} } });
   return {object,type:'mesh',count,importNote:object.userData.axisConversion||''};
 }
 function normalizeDxfText(source){
@@ -367,7 +373,7 @@ $('#dxfColor').addEventListener('input',e=>{const l=selected();if(l?.type==='dxf
 $('#pointSize').addEventListener('input',e=>{const l=selected(),v=+e.target.value;if(l){allMaterials(l.object,m=>{if(m.isPointsMaterial)m.size=v});$('#pointSizeValue').textContent=`${v.toFixed(1)} px`;invalidate()}});
 function removeLayerById(id){const l=state.layers.find(x=>x.id===id);if(!l)return;scene.remove(l.object);dispose(l.object);state.layers=state.layers.filter(x=>x!==l);if(state.selectedId===id){state.selectedId=null;selectLayer(null)}else renderLayers();if(!state.layers.length)$('#welcome').hidden=false;$('#coordinateWarning').hidden=true;invalidate();toast(`ลบ ${l.name} แล้ว`)}
 $('#removeLayer').addEventListener('click',()=>{const l=selected();if(l)removeLayerById(l.id)});
-function dispose(obj){obj.traverse(o=>{o.geometry?.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose())})}
+function dispose(obj){obj.traverse(o=>{o.geometry?.disposeBoundsTree?.();o.geometry?.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose())})}
 function syncOriginFields(){ $('#originX').value=state.origin.x.toFixed(3);$('#originY').value=state.origin.y.toFixed(3);$('#originZ').value=state.origin.z.toFixed(3); }
 $('#applyOrigin').addEventListener('click',()=>{state.origin.set(+$(' #originX'.trim()).value||0,+$('#originY').value||0,+$('#originZ').value||0);state.layers.forEach(updateLayerTransform);if(hasOsmBackground()||imageryGroup.children.length||terrainGroup.children.length||regionalTerrainGroup.children.length){clearBackground();clearImagery();clearTerrain();clearRegionalTerrain();toast('อัปเดต Local Origin แล้ว · กรุณาโหลด DEM และพื้นหลังภูมิศาสตร์ใหม่')}else toast('อัปเดต Local Origin แล้ว');fitAll();});
 function fitBox(box){if(box.isEmpty())return;const size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3()),fov=THREE.MathUtils.degToRad(camera.fov),maxDim=Math.max(size.x,size.y,size.z,1),distance=Math.max(maxDim/(2*Math.tan(fov/2))*1.6,10);controls.target.copy(center);controls.cursor.copy(center);camera.position.copy(center).add(new THREE.Vector3(distance*.65,-distance*.65,distance*.55));camera.near=Math.max(distance/1e5,.01);camera.far=Math.max(distance*100,1e4);camera.updateProjectionMatrix();pivotVisual.visible=false;controls.update();invalidate()}
@@ -392,11 +398,19 @@ function nearestVertex(hit){
   for(const index of candidates){vertex.fromBufferAttribute(position,index).applyMatrix4(hit.object.matrixWorld);const d=vertex.distanceToSquared(hit.point);if(d<bestDistance){bestDistance=d;best.copy(vertex)}}
   return best;
 }
-function pickModelPoint(e,targetSnap='surface',allowGround=true){
+function pickPointCloudFast(objects,threshold){
+  const ray=raycaster.ray,point=new THREE.Vector3(),offset=new THREE.Vector3(),closest=new THREE.Vector3();let best=null,bestDistance=Infinity;
+  for(const root of objects){root.updateMatrixWorld(true);root.traverse(o=>{const position=o.isPoints?o.geometry?.attributes?.position:null;if(!position)return;const step=Math.max(1,Math.ceil(position.count/150000));for(let i=0;i<position.count;i+=step){point.fromBufferAttribute(position,i).applyMatrix4(o.matrixWorld);offset.copy(point).sub(ray.origin);const distance=offset.dot(ray.direction);if(distance<0||distance>=bestDistance)continue;closest.copy(ray.direction).multiplyScalar(distance).add(ray.origin);if(closest.distanceToSquared(point)<=threshold*threshold){bestDistance=distance;best=point.clone()}}})}
+  return best?{point:best,kind:'POINT',distance:bestDistance}:null;
+}
+function pickModelPoint(e,targetSnap='surface',allowGround=true,surfaceOnly=false){
   mouse.copy(eventMouse(e)); raycaster.setFromCamera(mouse,camera);
   const distance=camera.position.distanceTo(controls.target); raycaster.params.Points.threshold=Math.max(distance/1000,0.01); raycaster.params.Line.threshold=Math.max(distance/1200,0.01);
-  const targets=state.layers.filter(l=>l.object.visible).map(l=>l.object); const hits=raycaster.intersectObjects(targets,true);
-  if(hits.length){const first=hits[0];return {point:targetSnap==='vertex'?nearestVertex(first):first.point.clone(),kind:first.object.isMesh?(targetSnap==='vertex'?'VERTEX':'SURFACE'):first.object.isPoints?'POINT':'LINE'};}
+  raycaster.firstHitOnly=true;
+  const visible=state.layers.filter(l=>l.object.visible),meshTargets=visible.filter(l=>l.type==='mesh').map(l=>l.object),pointTargets=visible.filter(l=>l.type==='point').map(l=>l.object),otherTargets=surfaceOnly?[]:visible.filter(l=>l.type==='dxf').map(l=>l.object);
+  const meshHit=raycaster.intersectObjects(meshTargets,true)[0],pointHit=pickPointCloudFast(pointTargets,raycaster.params.Points.threshold),otherHit=otherTargets.length?raycaster.intersectObjects(otherTargets,true)[0]:null,candidates=[];
+  if(meshHit)candidates.push({hit:meshHit,distance:meshHit.distance});if(pointHit)candidates.push({pick:pointHit,distance:pointHit.distance});if(otherHit)candidates.push({hit:otherHit,distance:otherHit.distance});candidates.sort((a,b)=>a.distance-b.distance);
+  if(candidates.length){const first=candidates[0];if(first.pick)return first.pick;const hit=first.hit;return {point:targetSnap==='vertex'?nearestVertex(hit):hit.point.clone(),kind:hit.object.isMesh?(targetSnap==='vertex'?'VERTEX':'SURFACE'):hit.object.isPoints?'POINT':'LINE'};}
   const point=allowGround?raycaster.ray.intersectPlane(ground,new THREE.Vector3())?.clone():null;return point?{point,kind:'GROUND'}:null;
 }
 function setNavigationPivot(point){controls.target.copy(point);controls.cursor.copy(point);const size=Math.max(camera.position.distanceTo(point)/120,.08);pivotVisual.position.copy(point);pivotVisual.scale.setScalar(size);pivotVisual.visible=true;controls.update();invalidate();toast(`ตั้งศูนย์ใหม่ E ${fmt(point.x+state.origin.x)} · N ${fmt(point.y+state.origin.y)} · Z ${fmt(point.z+state.origin.z)}`)}
@@ -420,7 +434,7 @@ function finishMeasure(rawEnd){
   $('#deltaX').textContent=`${fmt(delta.x)} m`;$('#deltaY').textContent=`${fmt(delta.y)} m`;$('#deltaZ').textContent=`${fmt(delta.z)} m`;$('#distance2d').textContent=`${fmt(Math.hypot(delta.x,delta.y))} m`;$('#distance3d').textContent=`${fmt(delta.length())} m`;$('#measureHint').textContent=`จุดปลาย: E ${fmt(end.x+state.origin.x)} · N ${fmt(end.y+state.origin.y)} · Z ${fmt(end.z+state.origin.z)}`;
   state.measureStart=null;invalidate();
 }
-function disposeGraphics(group){group.traverse(o=>{o.geometry?.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose())});group.clear()}
+function disposeGraphics(group){group.traverse(o=>{o.geometry?.disposeBoundsTree?.();o.geometry?.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose())});group.clear()}
 function updateVolumeGraphics(){disposeGraphics(volumeGroup);const points=state.volumePoints;if(!points.length){invalidate();return}points.forEach(p=>volumeGroup.add(marker(p,0xffd45c)));if(points.length>1){const linePoints=points.length>2?[...points,points[0]]:points,geometry=new THREE.BufferGeometry().setFromPoints(linePoints),material=new THREE.LineBasicMaterial({color:0xffd45c,depthTest:false,transparent:true,opacity:.95}),line=new THREE.Line(geometry,material);line.renderOrder=22;volumeGroup.add(line)}$('#volumeHint').textContent=`กำหนดขอบเขตแล้ว ${points.length} จุด${points.length>=3?' · กดคำนวณได้':''}`;invalidate()}
 function clearVolume(){state.volumePoints=[];state.volumeResult=null;disposeGraphics(volumeGroup);['#volumeArea','#volumeCells','#volumeFill','#volumeCut','#volumeNet','#volumeMaxHeight','#volumeCoverage'].forEach(s=>$(s).textContent='—');$('#volumeHint').textContent='คลิกจุดรอบฐานกองวัสดุอย่างน้อย 3 จุด';invalidate()}
 function toggleVolume(on){if(on&&state.measuring)toggleMeasure(false);if(on&&state.pivotMode){state.pivotMode=false;$('#pivotBtn').classList.remove('active');renderer.domElement.classList.remove('pivoting')}state.volumeMode=on;$('#volumePanel').hidden=!on;$('#volumeBtn').classList.toggle('active',on);renderer.domElement.classList.toggle('voluming',on);controls.enabled=true;if(!on)clearVolume()}
@@ -447,5 +461,5 @@ document.querySelectorAll('[data-axis]').forEach(b=>b.addEventListener('click',(
 document.querySelectorAll('[data-target-snap]').forEach(b=>b.addEventListener('click',()=>{state.measureTarget=b.dataset.targetSnap;document.querySelectorAll('[data-target-snap]').forEach(x=>x.classList.toggle('active',x===b));clearMeasure()}));
 let previewTimer=0,lastPreviewEvent=null;renderer.domElement.addEventListener('pointermove',e=>{if(!state.measuring)return;lastPreviewEvent={clientX:e.clientX,clientY:e.clientY};if(previewTimer)return;previewTimer=setTimeout(()=>{previewTimer=0;if(!state.measuring||!lastPreviewEvent)return;const pick=pickModelPoint(lastPreviewEvent,state.measureTarget,false);if(!pick)return;if(state.measureStart)updateMeasurePreview(pick.point,pick.kind);else showSnapPreview(pick)},75)});
 renderer.domElement.addEventListener('dblclick',e=>{if(!state.measuring&&!state.volumeMode)choosePivotAt(e)});
-renderer.domElement.addEventListener('pointerdown',e=>{pointerDown={x:e.clientX,y:e.clientY}});renderer.domElement.addEventListener('pointerup',e=>{if(!pointerDown||Math.hypot(e.clientX-pointerDown.x,e.clientY-pointerDown.y)>4)return;if(state.calibratingTerrain){mouse.copy(eventMouse(e));raycaster.setFromCamera(mouse,camera);const terrainHit=raycaster.intersectObjects(terrainGroup.children,true)[0];if(!terrainHit){toast('ไม่พบผิว DEM ที่ตำแหน่งนี้ กรุณาคลิกใหม่',true);return}const actual=Number($('#controlElevation').value),displayed=terrainHit.point.z+state.origin.z,newOffset=terrainVerticalOffset+actual-displayed;state.calibratingTerrain=false;renderer.domElement.classList.remove('terrain-calibrating');applyTerrainOffset(newOffset,'control');$('#verticalStatus').textContent+=` · DEM ${displayed.toFixed(3)} → Control ${actual.toFixed(3)} m`;return}if(state.pivotMode){choosePivotAt(e);return}if(state.volumeMode){const volumePick=pickModelPoint(e,'surface',false);if(!volumePick){toast('ไม่พบพื้นผิวสำหรับจุดขอบเขต',true);return}state.volumePoints.push(volumePick.point);updateVolumeGraphics();return}if(!state.measuring){selectDxfAt(e);return}const pick=pickModelPoint(e,state.measureTarget,false);if(!pick){toast('ไม่พบพื้นผิวใกล้ตำแหน่งเมาส์',true);return}const point=pick.point;if(!state.measureStart){clearMeasureGraphics();state.measureStart=point;measureGroup.add(marker(point,0xffffff));$('#measureHint').textContent=`${pick.kind} · จุดเริ่ม E ${fmt(point.x+state.origin.x)} · N ${fmt(point.y+state.origin.y)} · Z ${fmt(point.z+state.origin.z)} · เลื่อนเมาส์ไปยังจุดปลาย`;invalidate()}else finishMeasure(point)});
+renderer.domElement.addEventListener('pointerdown',e=>{pointerDown={x:e.clientX,y:e.clientY}});renderer.domElement.addEventListener('pointerup',e=>{if(!pointerDown||Math.hypot(e.clientX-pointerDown.x,e.clientY-pointerDown.y)>4)return;if(state.calibratingTerrain){mouse.copy(eventMouse(e));raycaster.setFromCamera(mouse,camera);const terrainHit=raycaster.intersectObjects(terrainGroup.children,true)[0];if(!terrainHit){toast('ไม่พบผิว DEM ที่ตำแหน่งนี้ กรุณาคลิกใหม่',true);return}const actual=Number($('#controlElevation').value),displayed=terrainHit.point.z+state.origin.z,newOffset=terrainVerticalOffset+actual-displayed;state.calibratingTerrain=false;renderer.domElement.classList.remove('terrain-calibrating');applyTerrainOffset(newOffset,'control');$('#verticalStatus').textContent+=` · DEM ${displayed.toFixed(3)} → Control ${actual.toFixed(3)} m`;return}if(state.pivotMode){choosePivotAt(e);return}if(state.volumeMode){const volumePick=pickModelPoint(e,'surface',false,true);if(!volumePick){toast('ไม่พบพื้นผิวสำหรับจุดขอบเขต',true);return}state.volumePoints.push(volumePick.point);updateVolumeGraphics();return}if(!state.measuring){selectDxfAt(e);return}const pick=pickModelPoint(e,state.measureTarget,false);if(!pick){toast('ไม่พบพื้นผิวใกล้ตำแหน่งเมาส์',true);return}const point=pick.point;if(!state.measureStart){clearMeasureGraphics();state.measureStart=point;measureGroup.add(marker(point,0xffffff));$('#measureHint').textContent=`${pick.kind} · จุดเริ่ม E ${fmt(point.x+state.origin.x)} · N ${fmt(point.y+state.origin.y)} · Z ${fmt(point.z+state.origin.z)} · เลื่อนเมาส์ไปยังจุดปลาย`;invalidate()}else finishMeasure(point)});
 function fmt(v){return Number(v).toLocaleString('en-US',{minimumFractionDigits:3,maximumFractionDigits:3})}
