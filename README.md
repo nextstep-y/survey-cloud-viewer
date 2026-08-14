@@ -13,6 +13,9 @@
 - วางภาพดาวเทียมบนพื้นผิว DEM (terrain draping)
 - ปรับ DEM Vertical Offset ด้วยค่าที่กำหนดหรือ Calibrate จาก Control Point ระดับจริง
 - วางถนนและฐานอาคาร OSM ตามระดับผิว DEM ที่แก้แล้ว
+- โหลด Regional Terrain รัศมี 2, 5 หรือ 10 กิโลเมตรจาก Mapzen Terrain Tiles บน AWS Open Data
+- วาง Esri imagery บนภูเขารอบโครงการและ Blend เข้ากับ Project DEM
+- ตัดภาพดาวเทียมตามพื้นที่ DEM/NoData เพื่อป้องกันผนังภาพแนวดิ่ง
 - นำเข้า DXF พร้อมรักษาค่าพิกัดและปรับ Elevation Offset
 - แสดง Point Cloud ด้วยสี RGB, Elevation และ Classification
 - จัดการ CAD Layer และสีภายใน DXF
