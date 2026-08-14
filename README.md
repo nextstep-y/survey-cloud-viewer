@@ -7,7 +7,9 @@
 - เปิด Point Cloud: LAS, LAZ และ PLY
 - เปิด Mesh Model: GLB, GLTF, OBJ, STL และ PLY
 - สร้างพื้นผิวภูมิประเทศจาก GeoTIFF DEM พร้อมตรวจ EPSG/UTM
-- โหลดภาพดาวเทียม Esri World Imagery ตาม Local Origin และ UTM Zone
+- ใช้ PRS92 / Philippines Zone 3 (EPSG:3123) เป็นระบบพิกัดโครงการเริ่มต้น
+- แปลง PRS92 เป็น WGS84 อัตโนมัติสำหรับภาพดาวเทียมและ OSM โดยรักษาพิกัดสำรวจต้นฉบับ
+- โหลดภาพดาวเทียม Esri World Imagery ตาม Local Origin และระบบพิกัดที่เลือก
 - วางภาพดาวเทียมบนพื้นผิว DEM (terrain draping)
 - นำเข้า DXF พร้อมรักษาค่าพิกัดและปรับ Elevation Offset
 - แสดง Point Cloud ด้วยสี RGB, Elevation และ Classification
