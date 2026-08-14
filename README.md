@@ -9,7 +9,8 @@
 - สร้างพื้นผิวภูมิประเทศจาก GeoTIFF DEM พร้อมตรวจ EPSG/UTM
 - ใช้ PRS92 / Philippines Zone 3 (EPSG:3123) เป็นระบบพิกัดโครงการเริ่มต้น
 - แปลง PRS92 เป็น WGS84 อัตโนมัติสำหรับภาพดาวเทียมและ OSM โดยรักษาพิกัดสำรวจต้นฉบับ
-- โหลดภาพดาวเทียม Esri World Imagery ตาม Local Origin และระบบพิกัดที่เลือก
+- เลือกภาพดาวเทียม Esri World Imagery หรือ MapTiler Satellite ตาม Local Origin และระบบพิกัดที่เลือก
+- ปรับความละเอียดภาพโครงการ Zoom 14–20 และขอบเขตโหลด 100, 250 หรือ 600 เมตร พร้อมแสดงค่าประมาณเมตรต่อพิกเซล
 - วางภาพดาวเทียมบนพื้นผิว DEM (terrain draping)
 - คง Project DEM ที่ Offset 0.000 m เป็นค่าใช้งานปกติ เพราะมาจาก Point Cloud ชุดเดียวกัน และซ่อนการ Calibrate ไว้ในเครื่องมือขั้นสูง
 - วาง Esri imagery ให้ติดตาม Project DEM อัตโนมัติ พร้อมปรับ Imagery Offset แยกได้
