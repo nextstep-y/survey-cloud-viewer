@@ -11,8 +11,9 @@
 - แปลง PRS92 เป็น WGS84 อัตโนมัติสำหรับภาพดาวเทียมและ OSM โดยรักษาพิกัดสำรวจต้นฉบับ
 - โหลดภาพดาวเทียม Esri World Imagery ตาม Local Origin และระบบพิกัดที่เลือก
 - วางภาพดาวเทียมบนพื้นผิว DEM (terrain draping)
-- ปรับ DEM Vertical Offset ด้วยค่าที่กำหนดหรือ Calibrate จาก Control Point ระดับจริง
-- วางถนนและฐานอาคาร OSM ตามระดับผิว DEM ที่แก้แล้ว
+- คง Project DEM ที่ Offset 0.000 m เป็นค่าใช้งานปกติ เพราะมาจาก Point Cloud ชุดเดียวกัน และซ่อนการ Calibrate ไว้ในเครื่องมือขั้นสูง
+- วาง Esri imagery ให้ติดตาม Project DEM อัตโนมัติ
+- ปรับระดับ Regional Terrain, อาคาร OSM และถนน OSM แยกกันได้ โดยไม่แก้ geometry ต้นฉบับ
 - โหลด Regional Terrain รัศมี 2, 5 หรือ 10 กิโลเมตรจาก Mapzen Terrain Tiles บน AWS Open Data
 - วาง Esri imagery บนภูเขารอบโครงการและ Blend เข้ากับ Project DEM
 - ตัดภาพดาวเทียมตามพื้นที่ DEM/NoData เพื่อป้องกันผนังภาพแนวดิ่ง
